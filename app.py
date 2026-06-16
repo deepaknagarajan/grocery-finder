@@ -162,32 +162,40 @@ def main():
 
     st.title("🛒 Grocery Finder")
 
-    # ── Step 1: Upload ────────────────────────────────────────────────────────
-    uploaded = st.file_uploader(
-        "Upload a grocery store aisle photo",
-        type=["jpg", "jpeg", "png", "webp"],
-    )
+    # ── Step 1: Upload or Camera ──────────────────────────────────────────────
+    tab_upload, tab_camera = st.tabs(["📁 Upload Photo", "📷 Take Photo"])
 
-    # Reset state if a new photo is uploaded
-    if uploaded:
-        file_id = (uploaded.name, uploaded.size)
+    with tab_upload:
+        uploaded = st.file_uploader(
+            "Upload a grocery store aisle photo",
+            type=["jpg", "jpeg", "png", "webp"],
+        )
+
+    with tab_camera:
+        captured = st.camera_input("Point at the shelf and tap capture")
+
+    image_source = captured if captured is not None else uploaded
+
+    # Reset state if a new photo is provided
+    if image_source:
+        file_id = (image_source.name, image_source.size)
         if st.session_state.get("_file_id") != file_id:
             for key in ["products", "img", "img_b64", "img_media_type", "img_w", "img_h"]:
                 st.session_state.pop(key, None)
             st.session_state["_file_id"] = file_id
 
-    if uploaded:
-        st.image(uploaded, caption="Uploaded photo", use_container_width=True)
+    if image_source:
+        st.image(image_source, caption="Shelf photo", use_container_width=True)
 
     # ── Step 2: Scan ──────────────────────────────────────────────────────────
-    if uploaded and "products" not in st.session_state:
+    if image_source and "products" not in st.session_state:
         if not api_key:
             st.warning("Enter your Anthropic API key in the sidebar to scan.")
         else:
             if st.button("🔍 Scan Shelf", type="primary", use_container_width=True):
                 with st.spinner("Scanning shelf — Claude is reading every product label..."):
                     try:
-                        img, b64, media_type = prepare_image(uploaded)
+                        img, b64, media_type = prepare_image(image_source)
                         img_w, img_h = img.size
                         client = anthropic.Anthropic(api_key=api_key)
                         products = scan_shelf(client, b64, media_type, img_w, img_h)
