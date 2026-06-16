@@ -212,6 +212,10 @@ def main():
 
         st.success(f"Shelf scanned — {len(products)} products identified. Search below (no API calls).")
 
+        # Apply voice result from previous run before widget renders
+        if "_pending_voice" in st.session_state:
+            st.session_state["search_query"] = st.session_state.pop("_pending_voice")
+
         col1, col2 = st.columns([5, 1])
         with col1:
             query = st.text_input(
@@ -229,7 +233,7 @@ def main():
                 key="mic",
             )
         if voice:
-            st.session_state["search_query"] = voice
+            st.session_state["_pending_voice"] = voice
             st.rerun()
 
         if query:
