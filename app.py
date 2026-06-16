@@ -12,6 +12,7 @@ from io import BytesIO
 import streamlit as st
 from PIL import Image, ImageDraw, ImageOps, ImageFont
 import anthropic
+from streamlit_mic_recorder import speech_to_text
 
 
 MAX_IMAGE_SIZE = 1568
@@ -211,10 +212,25 @@ def main():
 
         st.success(f"Shelf scanned — {len(products)} products identified. Search below (no API calls).")
 
-        query = st.text_input(
-            "Search for a product",
-            placeholder="e.g. Honey Bunches of Oats",
-        )
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            query = st.text_input(
+                "Search for a product",
+                placeholder="e.g. Honey Bunches of Oats",
+                key="search_query",
+            )
+        with col2:
+            st.write("")
+            st.write("")
+            voice = speech_to_text(
+                language="en",
+                just_once=True,
+                use_container_width=True,
+                key="mic",
+            )
+        if voice:
+            st.session_state["search_query"] = voice
+            st.rerun()
 
         if query:
             matches = search_products(products, query)
